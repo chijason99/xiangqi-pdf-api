@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using QuestPDF.Fluent;
+using XiangqiPdf.Domain;
 using XiangqiPdfCreationApi.Model;
 using XiangqiPdfCreationApi.Model.PdfComponents;
 using XiangqiPdfCreationApi.Models;
@@ -17,6 +18,12 @@ public class PdfCreationController : ControllerBase
 		{
 			var parsedGameObject = gameObject ??= GameObjectTemplate.GenerateGameObjectTemplate();
 
+			foreach(var move in gameObject.Moves)
+			{
+				if (!FenValidator.Validate(move.Fen))
+					throw new ArgumentException($"One of the input Fen '{move.Fen}' is invalid");
+			}
+
 			var document = new XiangqiPdfDocument(parsedGameObject);
 
 			byte[] pdfBytes = document.GeneratePdf();
@@ -25,7 +32,11 @@ public class PdfCreationController : ControllerBase
 		}
 		catch (Exception ex)
 		{
-			return StatusCode(500);
+			return new JsonResult(new
+			{
+				isSuccessful = false,
+				error = ex.Message
+			});
 		}
 	}
 
